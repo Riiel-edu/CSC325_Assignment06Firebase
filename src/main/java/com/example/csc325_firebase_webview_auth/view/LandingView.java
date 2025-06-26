@@ -1,5 +1,6 @@
 package com.example.csc325_firebase_webview_auth.view;
 
+import com.example.csc325_firebase_webview_auth.model.CurrUser;
 import com.example.csc325_firebase_webview_auth.model.Person;
 import com.google.api.core.ApiFuture;
 import com.google.cloud.firestore.DocumentReference;
@@ -31,6 +32,8 @@ public class LandingView implements Initializable {
     @FXML
     TextField name, age, major;
 
+    String currUser;
+
     @FXML
     private TableView<Person> tv;
 
@@ -47,6 +50,8 @@ public class LandingView implements Initializable {
 
     @Override
     public void initialize(URL url, ResourceBundle resourceBundle) {
+
+        currUser = CurrUser.getUid();
 
         tv_fn.setCellValueFactory(new PropertyValueFactory<>("name"));
         tv_age.setCellValueFactory(new PropertyValueFactory<>("age"));
@@ -67,7 +72,9 @@ public class LandingView implements Initializable {
                     System.out.println(document.getData().get("Age"));
                     Person person = new Person(String.valueOf(document.getData().get("Name")), document.getData().get("Major").toString(), Integer.parseInt(document.getData().get("Age").toString()));
 
-                    data.add(person);
+                    if(document.getData().get("User").equals(currUser)) {
+                        data.add(person);
+                    }
                 }
 
             } else {
@@ -94,6 +101,7 @@ public class LandingView implements Initializable {
         datas.put("Name", name.getText());
         datas.put("Major", major.getText());
         datas.put("Age", Integer.parseInt(age.getText()));
+        datas.put("User", currUser);
 
         //asynchronously write data
         ApiFuture<WriteResult> result = docRef.set(datas);
@@ -116,10 +124,47 @@ public class LandingView implements Initializable {
     @FXML
     protected void editRecord() {
         Person p = tv.getSelectionModel().getSelectedItem();
+
+        //asynchronously retrieve all documents
+        ApiFuture<QuerySnapshot> future = App.fstore.collection("References").get();
+        // future.get() blocks on response
+        List<QueryDocumentSnapshot> documents;
+        try {
+            documents = future.get().getDocuments();
+
+            if (documents.size() > 0) {
+                System.out.println("Outing....");
+
+                for (QueryDocumentSnapshot document : documents) {
+
+                    if(document.getData().get("User").equals(currUser) && document.getData().get("Name").equals(p.getName()) && document.getData().get("Major").equals(p.getMajor()) && Integer.parseInt(document.getData().get("Age").toString()) == p.getAge()) {
+                        DocumentReference docRef = App.fstore.collection("References").document(document.getId());
+                        docRef.delete();
+                    }
+                }
+
+            } else {
+                System.out.println("No data");
+            }
+
+        } catch (InterruptedException | ExecutionException ex) {
+            ex.printStackTrace();
+        }
         int c = data.indexOf(p);
         Person p2 = new Person(name.getText(), major.getText(), Integer.parseInt(age.getText()));
         data.remove(c);
         data.add(c,p2);
+
+        DocumentReference docRef = App.fstore.collection("References").document(UUID.randomUUID().toString());
+
+        Map<String, Object> datas = new HashMap<>();
+        datas.put("Name", name.getText());
+        datas.put("Major", major.getText());
+        datas.put("Age", Integer.parseInt(age.getText()));
+        datas.put("User", currUser);
+
+        //asynchronously write data
+        ApiFuture<WriteResult> result = docRef.set(datas);
 
         tv.getSelectionModel().select(c);
     }
@@ -128,8 +173,34 @@ public class LandingView implements Initializable {
     protected void deleteRecord() {
 
         Person p = tv.getSelectionModel().getSelectedItem();
-        data.remove(p);
 
+        //asynchronously retrieve all documents
+        ApiFuture<QuerySnapshot> future = App.fstore.collection("References").get();
+        // future.get() blocks on response
+        List<QueryDocumentSnapshot> documents;
+        try {
+            documents = future.get().getDocuments();
+
+            if (documents.size() > 0) {
+                System.out.println("Outing....");
+
+                for (QueryDocumentSnapshot document : documents) {
+
+                    if(document.getData().get("User").equals(currUser) && document.getData().get("Name").equals(p.getName()) && document.getData().get("Major").equals(p.getMajor()) && Integer.parseInt(document.getData().get("Age").toString()) == p.getAge()) {
+                        DocumentReference docRef = App.fstore.collection("References").document(document.getId());
+                        docRef.delete();
+                    }
+                }
+
+            } else {
+                System.out.println("No data");
+            }
+
+        } catch (InterruptedException | ExecutionException ex) {
+            ex.printStackTrace();
+        }
+
+        data.remove(p);
     }
 
     @FXML
