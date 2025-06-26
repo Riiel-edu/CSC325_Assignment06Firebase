@@ -1,0 +1,17 @@
+.buttons {
+    -fx-background-color:#9045e6;
+    -fx-color:#ffffff;
+}
+
+.text_pane {
+    -fx-background-color:#0e001f;
+}
+
+.bottom_bar {
+    -fx-background-color: #eec7ff;
+}
+
+/*.tv_header {
+    -fx-background-color:#9045e6;
+    -fx-color:#ffffff;
+}*/
